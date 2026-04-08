@@ -1,0 +1,145 @@
+{% extends 'base.html' %}
+
+{% block title %}AI Прогнози - Smart City{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-brain me-3 text-danger"></i>AI Прогнози</h2>
+                <a href="{% url 'predictions:dashboard' %}" class="btn btn-outline-primary">
+                    <i class="fas fa-chart-line me-2"></i>Табло с прогнози
+                </a>
+            </div>
+            
+            <!-- Stats -->
+            <div class="row g-4 mb-4">
+                <div class="col-md-3">
+                    <div class="card stat-card">
+                        <div class="card-body text-center">
+                            <div class="stat-value text-success">{{ high_confidence_count }}</div>
+                            <small class="text-muted">Висока увереност</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card stat-card">
+                        <div class="card-body text-center">
+                            <div class="stat-value text-warning">{{ pending_count }}</div>
+                            <small class="text-muted">Чакащи валидация</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Filters -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <form method="get" class="row g-3">
+                        <div class="col-md-3">
+                            <label class="form-label">Тип прогноза</label>
+                            <select name="type" class="form-select">
+                                <option value="">Всички</option>
+                                {% for type_value, type_name in prediction_types %}
+                                <option value="{{ type_value }}" {% if selected_type == type_value %}selected{% endif %}>{{ type_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Статус</label>
+                            <select name="status" class="form-select">
+                                <option value="">Всички</option>
+                                {% for status_value, status_name in status_choices %}
+                                <option value="{{ status_value }}" {% if selected_status == status_value %}selected{% endif %}>{{ status_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Мин. увереност (%)</label>
+                            <input type="number" name="min_confidence" class="form-control" value="{{ request.GET.min_confidence|default:"50" }}">
+                        </div>
+                        <div class="col-md-3 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary me-2">
+                                <i class="fas fa-filter me-2"></i>Филтрирай
+                            </button>
+                            <a href="{% url 'predictions:list' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times"></i>
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Predictions Table -->
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-list me-2"></i>Прогнози
+                </div>
+                <div class="card-body p-0">
+                    {% if predictions %}
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Заглавие</th>
+                                    <th>Тип</th>
+                                    <th>Увереност</th>
+                                    <th>Вероятност</th>
+                                    <th>За кога</th>
+                                    <th>Статус</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for prediction in predictions %}
+                                <tr>
+                                    <td>
+                                        <a href="{% url 'predictions:detail' prediction.pk %}" class="text-decoration-none fw-bold">
+                                            {{ prediction.title }}
+                                        </a>
+                                    </td>
+                                    <td>{{ prediction.get_prediction_type_display }}</td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="progress flex-grow-1 me-2" style="height: 8px;">
+                                                <div class="progress-bar bg-{{ prediction.get_confidence_color }}" style="width: {{ prediction.confidence }}%"></div>
+                                            </div>
+                                            <span class="small">{{ prediction.confidence|floatformat:0 }}%</span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        {% if prediction.probability %}
+                                        {{ prediction.probability|floatformat:0 }}%
+                                        {% else %}
+                                        <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if prediction.prediction_for_time %}
+                                        {{ prediction.prediction_for_time|date:"d.m.Y H:i" }}
+                                        {% else %}
+                                        <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-{{ prediction.get_status_color }}">
+                                            {{ prediction.get_status_display }}
+                                        </span>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-robot fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">Няма намерени прогнози</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

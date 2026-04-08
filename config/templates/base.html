@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Smart City - Мониторинг на водна инфраструктура{% endblock %}</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <style>
+        :root {
+            --primary-blue: #1B6DF2;
+            --primary-blue-dark: #004DC9;
+            --primary-blue-light: #d7e8ff;
+            --smart-city-blue: #1B6DF2;
+        }
+
+        body {
+            background-color: #f8f9fa;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .navbar {
+            background: linear-gradient(135deg, var(--smart-city-blue) 0%, var(--primary-blue-dark) 100%);
+            box-shadow: 0 2px 10px rgba(27, 109, 242, 0.3);
+        }
+
+        .navbar-brand {
+            font-weight: 700;
+            font-size: 1.5rem;
+        }
+
+        .navbar-brand i {
+            margin-right: 10px;
+        }
+
+        .nav-link {
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .nav-link:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 5px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--smart-city-blue) 0%, var(--primary-blue) 100%);
+            border: none;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, var(--primary-blue-dark) 0%, var(--smart-city-blue) 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(27, 109, 242, 0.4);
+        }
+
+        .btn-outline-primary {
+            border-color: var(--smart-city-blue);
+            color: var(--smart-city-blue);
+        }
+
+        .btn-outline-primary:hover {
+            background-color: var(--smart-city-blue);
+            border-color: var(--smart-city-blue);
+        }
+
+        .card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+        }
+
+        .card-header {
+            background: linear-gradient(135deg, var(--smart-city-blue) 0%, var(--primary-blue-dark) 100%);
+            color: white;
+            border-radius: 15px 15px 0 0 !important;
+            font-weight: 600;
+        }
+
+        .stat-card {
+            border-left: 4px solid var(--smart-city-blue);
+        }
+
+        .stat-card .stat-icon {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, var(--primary-blue-light) 0%, #fff 100%);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: var(--smart-city-blue);
+        }
+
+        .stat-card .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--smart-city-blue);
+        }
+
+        .alert-item {
+            border-left: 4px solid var(--smart-city-blue);
+            padding: 15px;
+            margin-bottom: 10px;
+            background: white;
+            border-radius: 0 10px 10px 0;
+            transition: all 0.3s ease;
+        }
+
+        .alert-item:hover {
+            background: var(--primary-blue-light);
+            transform: translateX(5px);
+        }
+
+        .badge-critical {
+            background-color: var(--smart-city-blue);
+        }
+
+        .badge-high {
+            background-color: #fd7e14;
+        }
+
+        .badge-medium {
+            background-color: #ffc107;
+            color: #000;
+        }
+
+        .badge-low {
+            background-color: #6c757d;
+        }
+
+        #map {
+            height: 500px;
+            border-radius: 15px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .footer {
+            background: linear-gradient(135deg, #343a40 0%, #212529 100%);
+            color: white;
+            padding: 30px 0;
+            margin-top: auto;
+        }
+
+        .footer a {
+            color: #adb5bd;
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .footer a:hover {
+            color: var(--smart-city-blue);
+        }
+
+        .form-control {
+            color: #212529;
+        }
+
+        .form-control:focus {
+            border-color: var(--smart-city-blue);
+            box-shadow: 0 0 0 0.2rem rgba(27, 109, 242, 0.25);
+            color: #212529;
+        }
+
+        .form-control::placeholder {
+            color: #6c757d;
+        }
+
+        .form-select {
+            color: #212529;
+        }
+
+        .form-select:focus {
+            border-color: var(--smart-city-blue);
+            box-shadow: 0 0 0 0.2rem rgba(27, 109, 242, 0.25);
+            color: #212529;
+        }
+
+        .page-link {
+            color: var(--smart-city-blue);
+        }
+
+        .page-item.active .page-link {
+            background-color: var(--smart-city-blue);
+            border-color: var(--smart-city-blue);
+        }
+
+        .notification-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background-color: var(--smart-city-blue);
+            color: white;
+            font-size: 0.7rem;
+            padding: 2px 6px;
+            border-radius: 10px;
+        }
+
+        .hero-section {
+            background: linear-gradient(135deg, var(--smart-city-blue) 0%, var(--primary-blue-dark) 100%);
+            color: white;
+            padding: 60px 0;
+            margin-bottom: 40px;
+        }
+
+        .feature-icon {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, var(--primary-blue-light) 0%, #fff 100%);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            color: var(--smart-city-blue);
+            margin-bottom: 20px;
+        }
+
+        .progress-bar {
+            background: linear-gradient(90deg, var(--smart-city-blue) 0%, var(--primary-blue) 100%);
+        }
+
+        .table th {
+            background-color: var(--primary-blue-light);
+            color: var(--primary-blue-dark);
+            font-weight: 600;
+        }
+
+        .dropdown-menu {
+            border: none;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .dropdown-item:hover {
+            background-color: var(--primary-blue-light);
+            color: var(--smart-city-blue);
+        }
+
+        .login-card {
+            max-width: 450px;
+            margin: 0 auto;
+        }
+
+        .login-card .card-header {
+            text-align: center;
+            padding: 30px;
+        }
+
+        .login-card .card-header i {
+            font-size: 3rem;
+            margin-bottom: 15px;
+        }
+
+        .social-login-btn {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            transition: all 0.3s ease;
+        }
+
+        .social-login-btn:hover {
+            transform: scale(1.1);
+        }
+
+        @media (max-width: 768px) {
+            .hero-section {
+                padding: 40px 0;
+            }
+
+            .stat-card .stat-value {
+                font-size: 1.5rem;
+            }
+
+            #map {
+                height: 350px;
+            }
+        }
+    </style>
+
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container">
+            <a class="navbar-brand" href="{% url 'dashboard:index' %}">
+                <i class="fas fa-city"></i>Smart City
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'dashboard:index' %}">
+                            <i class="fas fa-home me-1"></i>Начало
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'dashboard:map' %}">
+                            <i class="fas fa-map-marked-alt me-1"></i>Карта
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'dashboard:incident_list' %}">
+                            <i class="fas fa-exclamation-triangle me-1"></i>Инциденти
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'reports:create' %}">
+                            <i class="fas fa-plus-circle me-1"></i>Подай сигнал
+                        </a>
+                    </li>
+                </ul>
+                <ul class="navbar-nav">
+                    {% if user.is_authenticated %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-user-circle me-1"></i>{{ user.get_short_name }}
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="{% url 'users:profile' %}">
+                                <i class="fas fa-user me-2"></i>Профил
+                            </a></li>
+                            <li><a class="dropdown-item" href="{% url 'users:notifications' %}">
+                                <i class="fas fa-bell me-2"></i>Известия
+                            </a></li>
+                            <li><a class="dropdown-item" href="{% url 'reports:my_reports' %}">
+                                <i class="fas fa-clipboard-list me-2"></i>Моите сигнали
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item text-danger" href="{% url 'users:logout' %}">
+                                <i class="fas fa-sign-out-alt me-2"></i>Изход
+                            </a></li>
+                        </ul>
+                    </li>
+                    {% else %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'users:login' %}">
+                            <i class="fas fa-sign-in-alt me-1"></i>Вход
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'users:register' %}">
+                            <i class="fas fa-user-plus me-1"></i>Регистрация
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Messages -->
+    {% if messages %}
+    <div class="container mt-3">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Main Content -->
+    <main class="flex-grow-1">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-4">
+                    <h5><i class="fas fa-city me-2"></i>Smart City</h5>
+                    <p>Интелигентна система за мониторинг на водна инфраструктура с изкуствен интелект.</p>
+                </div>
+                <div class="col-md-4">
+                    <h5>Бързи връзки</h5>
+                    <ul class="list-unstyled">
+                        <li><a href="{% url 'dashboard:index' %}">Начало</a></li>
+                        <li><a href="{% url 'dashboard:map' %}">Интерактивна карта</a></li>
+                        <li><a href="{% url 'reports:create' %}">Подай сигнал</a></li>
+                        <li><a href="{% url 'dashboard:statistics' %}">Статистика</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-4">
+                    <h5>Контакти</h5>
+                    <p><i class="fas fa-envelope me-2"></i>support@smartcity.bg</p>
+                    <p><i class="fas fa-phone me-2"></i>0700 12 345</p>
+                    <div class="mt-3">
+                        <a href="#" class="me-3"><i class="fab fa-facebook fa-lg"></i></a>
+                        <a href="#" class="me-3"><i class="fab fa-twitter fa-lg"></i></a>
+                        <a href="#"><i class="fab fa-linkedin fa-lg"></i></a>
+                    </div>
+                </div>
+            </div>
+            <hr class="my-4">
+            <div class="text-center">
+                <p class="mb-0">&copy; {% now "Y" %} Smart City. Всички права запазени.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    {% block extra_js %}{% endblock %}
+</body>
+</html>
