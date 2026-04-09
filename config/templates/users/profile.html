@@ -1,0 +1,144 @@
+{% extends 'base.html' %}
+
+{% block title %}Моят профил - Smart City{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row">
+        <!-- Profile Sidebar -->
+        <div class="col-lg-4">
+            <div class="card mb-4">
+                <div class="card-body text-center">
+                    {% if user.profile.avatar %}
+                    <img src="{{ user.profile.avatar.url }}" alt="Avatar" class="rounded-circle mb-3" style="width: 150px; height: 150px; object-fit: cover;">
+                    {% else %}
+                    <div class="rounded-circle bg-danger bg-opacity-10 d-flex align-items-center justify-content-center mx-auto mb-3" style="width: 150px; height: 150px;">
+                        <i class="fas fa-user fa-5x text-danger"></i>
+                    </div>
+                    {% endif %}
+                    <h4 class="mb-1">{{ user.get_full_name }}</h4>
+                    <p class="text-muted mb-2">{{ user.get_role_display_name }}</p>
+                    <p class="text-muted"><i class="fas fa-envelope me-2"></i>{{ user.email }}</p>
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'users:profile_edit' %}" class="btn btn-primary">
+                            <i class="fas fa-edit me-2"></i>Редактирай профил
+                        </a>
+                        <a href="{% url 'users:change_password' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-key me-2"></i>Смени парола
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Quick Stats -->
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-chart-pie me-2"></i>Статистика
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span><i class="fas fa-clipboard-list me-2 text-primary"></i>Моите сигнали:</span>
+                        <span class="fw-bold">{{ reports_count }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span><i class="fas fa-bell me-2 text-warning"></i>Непрочетени известия:</span>
+                        <span class="fw-bold">{{ unread_notifications }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span><i class="fas fa-calendar me-2 text-success"></i>Член от:</span>
+                        <span class="fw-bold">{{ user.date_joined|date:"d.m.Y" }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Profile Content -->
+        <div class="col-lg-8">
+            <!-- Notifications -->
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span><i class="fas fa-bell me-2"></i>Последни известия</span>
+                    <a href="{% url 'users:notifications' %}" class="btn btn-sm btn-light">Всички</a>
+                </div>
+                <div class="card-body">
+                    {% if notifications %}
+                        {% for notification in notifications %}
+                        <div class="alert alert-{{ notification.notification_type }} d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong>{{ notification.title }}</strong>
+                                <p class="mb-0 small">{{ notification.message|truncatewords:20 }}</p>
+                                <small class="text-muted">{{ notification.created_at|timesince }} назад</small>
+                            </div>
+                            {% if not notification.is_read %}
+                            <span class="badge bg-danger">Ново</span>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-muted text-center mb-0">Няма известия</p>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Personal Information -->
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-user me-2"></i>Лична информация
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="text-muted">Име</label>
+                            <p class="fw-bold">{{ user.first_name|default:"-" }}</p>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="text-muted">Фамилия</label>
+                            <p class="fw-bold">{{ user.last_name|default:"-" }}</p>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="text-muted">Имейл</label>
+                            <p class="fw-bold">{{ user.email }}</p>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="text-muted">Телефон</label>
+                            <p class="fw-bold">{{ user.phone|default:"-" }}</p>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="text-muted">Адрес</label>
+                            <p class="fw-bold">{{ user.profile.address|default:"-" }}</p>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="text-muted">Град</label>
+                            <p class="fw-bold">{{ user.profile.city|default:"-" }}</p>
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    
+                    <h6 class="mb-3"><i class="fas fa-cog me-2"></i>Настройки за известия</h6>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" {% if user.email_notifications %}checked{% endif %} disabled>
+                                <label class="form-check-label">Имейл известия</label>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" {% if user.sms_notifications %}checked{% endif %} disabled>
+                                <label class="form-check-label">SMS известия</label>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" {% if user.push_notifications %}checked{% endif %} disabled>
+                                <label class="form-check-label">Push известия</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
