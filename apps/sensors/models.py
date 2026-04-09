@@ -17,7 +17,7 @@ class Sensor(models.Model):
     active = models.BooleanField(default=True)
 
     def installed_at_gmt(self):
-        local_time = timezone.localtime(self.timestamp)
+        local_time = timezone.localtime(self.installed_at)
         return local_time.strftime("%Y-%m-%d %H:%M:%S GMT%z")
 
     def __str__(self):
