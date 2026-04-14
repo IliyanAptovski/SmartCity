@@ -161,25 +161,6 @@ smart_city/
 └── README.md            # Този файл
 ```
 
-## API Endpoints
-
-### Публични
-
-- `GET /api/stats/` - Статистика за таблото
-- `GET /api/map-data/` - Данни за картата
-- `GET /api/consumption/` - Данни за консумация
-
-### Изискват автентикация
-
-- `GET /api/users/` - Списък с потребители
-- `GET /api/sensors/` - Списък със сензори
-- `GET /api/anomalies/` - Списък с аномалии
-- `GET /api/incidents/` - Списък с инциденти
-- `GET /api/reports/` - Списък със сигнали
-- `GET /api/predictions/` - Списък с прогнози
-
-## Machine Learning
-
 ### Модели
 
 1. **AnomalyDetector** - Isolation Forest за откриване на аномалии
