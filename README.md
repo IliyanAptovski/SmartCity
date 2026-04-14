@@ -186,22 +186,6 @@ smart_city/
 2. **LeakDetector** - Random Forest за откриване на течове
 3. **ConsumptionForecaster** - Gradient Boosting за прогнозиране на консумация
 
-### Обучение
-
-```bash
-python manage.py shell
-```
-
-```python
-from predictions.ml_models import train_anomaly_model
-from dashboard.models import SensorReading
-
-# Зареди данни
-readings = SensorReading.objects.filter(is_anomaly=False)
-
-# Обучи модел
-detector = train_anomaly_model(readings, 'my_model')
-```
 
 ## Celery (опционално)
 
@@ -227,22 +211,5 @@ python manage.py test
 # Създаване на тестови данни
 python manage.py create_test_data --clean
 ```
-
-## Цветова схема
-
-- **Основен червен**: #e31e24
-- **Тъмен червен**: #b02a37
-- **Светъл червен**: #f8d7da
-
-## Лиценз
-
-Този проект е с отворен код и може да се използва свободно.
-
-## Контакти
-
-- Email: support@smartcity.bg
-- Телефон: 0700 12 345
-
----
 
 **Smart City** - Интелигентен мониторинг на водна инфраструктура
