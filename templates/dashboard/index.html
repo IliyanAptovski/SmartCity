@@ -1,0 +1,306 @@
+{% extends 'base.html' %}
+
+{% block title %}Smart City - Табло{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero-section">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-8">
+                <h1 class="display-4 fw-bold mb-3">
+                    <i class="fas fa-tint me-3"></i>Мониторинг на водна инфраструктура
+                </h1>
+                <p class="lead mb-4">
+                    Интелигентна система за откриване на аномалии, прогнозиране и управление на водната инфраструктура.
+                </p>
+                <div class="d-flex gap-3">
+                    <a href="{% url 'reports:create' %}" class="btn btn-light btn-lg">
+                        <i class="fas fa-plus-circle me-2"></i>Подай сигнал
+                    </a>
+                    <a href="{% url 'dashboard:map' %}" class="btn btn-outline-light btn-lg">
+                        <i class="fas fa-map-marked-alt me-2"></i>Виж картата
+                    </a>
+                </div>
+            </div>
+            <div class="col-lg-4 text-center d-none d-lg-block">
+                <i class="fas fa-city" style="font-size: 10rem; opacity: 0.3;"></i>
+            </div>
+        </div>
+    </div>
+</section>
+
+<div class="container mb-5">
+    <!-- Statistics Cards -->
+    <div class="row g-4 mb-5">
+        <div class="col-md-3">
+            <div class="card stat-card h-100">
+                <div class="card-body d-flex align-items-center">
+                    <div class="stat-icon me-3">
+                        <i class="fas fa-microchip"></i>
+                    </div>
+                    <div>
+                        <h6 class="text-muted mb-1">Активни сензори</h6>
+                        <div class="stat-value">{{ active_sensors }}</div>
+                        <small class="text-muted">от {{ total_sensors }} общо</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card h-100">
+                <div class="card-body d-flex align-items-center">
+                    <div class="stat-icon me-3">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <div>
+                        <h6 class="text-muted mb-1">Активни аномалии</h6>
+                        <div class="stat-value">{{ active_anomalies }}</div>
+                        {% if critical_anomalies > 0 %}
+                        <small class="text-danger"><i class="fas fa-fire me-1"></i>{{ critical_anomalies }} критични</small>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card h-100">
+                <div class="card-body d-flex align-items-center">
+                    <div class="stat-icon me-3">
+                        <i class="fas fa-tools"></i>
+                    </div>
+                    <div>
+                        <h6 class="text-muted mb-1">Текущи инциденти</h6>
+                        <div class="stat-value">{{ ongoing_incidents }}</div>
+                        <small class="text-muted">в различни райони</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card h-100">
+                <div class="card-body d-flex align-items-center">
+                    <div class="stat-icon me-3">
+                        <i class="fas fa-clipboard-list"></i>
+                    </div>
+                    <div>
+                        <h6 class="text-muted mb-1">Чакащи сигнали</h6>
+                        <div class="stat-value">{{ total_reports }}</div>
+                        <small class="text-muted">от граждани</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Recent Anomalies -->
+        <div class="col-lg-4">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span><i class="fas fa-exclamation-circle me-2"></i>Последни аномалии</span>
+                    <a href="{% url 'dashboard:anomaly_list' %}" class="btn btn-sm btn-light">Всички</a>
+                </div>
+                <div class="card-body">
+                    {% if recent_anomalies %}
+                        {% for anomaly in recent_anomalies %}
+                        <div class="alert-item">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h6 class="mb-1">{{ anomaly.title }}</h6>
+                                    <small class="text-muted">
+                                        <i class="fas fa-map-marker-alt me-1"></i>{{ anomaly.sensor.district|default:"Неизвестен район" }}
+                                    </small>
+                                </div>
+                                <span class="badge badge-{{ anomaly.get_severity_color }}">
+                                    {{ anomaly.get_severity_display }}
+                                </span>
+                            </div>
+                            <small class="text-muted">
+                                <i class="fas fa-clock me-1"></i>{{ anomaly.detected_at|timesince }} назад
+                                <span class="ms-2"><i class="fas fa-percentage me-1"></i>{{ anomaly.confidence|floatformat:0 }}% увереност</span>
+                            </small>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-check-circle text-success fa-3x mb-3"></i>
+                            <p class="text-muted">Няма активни аномалии</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Featured Incidents -->
+        <div class="col-lg-4">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span><i class="fas fa-fire me-2"></i>Важни инциденти</span>
+                    <a href="{% url 'dashboard:incident_list' %}" class="btn btn-sm btn-light">Всички</a>
+                </div>
+                <div class="card-body">
+                    {% if featured_incidents %}
+                        {% for incident in featured_incidents %}
+                        <div class="alert-item">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h6 class="mb-1">{{ incident.title }}</h6>
+                                    <small class="text-muted">
+                                        <i class="fas fa-map-marker-alt me-1"></i>{{ incident.district }}
+                                    </small>
+                                </div>
+                                <span class="badge bg-{{ incident.get_status_color }}">
+                                    {{ incident.get_status_display }}
+                                </span>
+                            </div>
+                            <small class="text-muted d-block mt-1">
+                                <i class="fas fa-users me-1"></i>{{ incident.affected_users }} засегнати
+                            </small>
+                            {% if incident.estimated_resolution %}
+                            <small class="text-info d-block mt-1">
+                                <i class="fas fa-clock me-1"></i>До {{ incident.estimated_resolution|date:"d.m H:i" }}
+                            </small>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-check-circle text-success fa-3x mb-3"></i>
+                            <p class="text-muted">Няма важни инциденти</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Consumption Chart -->
+        <div class="col-lg-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <i class="fas fa-chart-line me-2"></i>Консумация (последни 24ч)
+                </div>
+                <div class="card-body">
+                    <canvas id="consumptionChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Map Preview -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span><i class="fas fa-map me-2"></i>Интерактивна карта</span>
+                    <a href="{% url 'dashboard:map' %}" class="btn btn-sm btn-light">
+                        <i class="fas fa-expand me-1"></i>Разшири
+                    </a>
+                </div>
+                <div class="card-body p-0">
+                    <div id="map" style="height: 400px;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- District Statistics -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-chart-bar me-2"></i>Консумация по райони
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Район</th>
+                                    <th>Обща консумация (литри)</th>
+                                    <th>Статус</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for district in districts %}
+                                <tr>
+                                    <td><i class="fas fa-map-marker-alt me-2 text-danger"></i>{{ district.district }}</td>
+                                    <td>{{ district.total_consumption|floatformat:0 }}</td>
+                                    <td><span class="badge bg-success">Нормално</span></td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="3" class="text-center text-muted">Няма данни</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Consumption Chart
+    const ctx = document.getElementById('consumptionChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: {{ chart_labels|safe }},
+            datasets: [{
+                label: 'Консумация (литри)',
+                data: {{ chart_values }},
+                borderColor: '#e31e24',
+                backgroundColor: 'rgba(227, 30, 36, 0.1)',
+                borderWidth: 2,
+                fill: true,
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+
+    // Map
+    const map = L.map('map').setView([42.6977, 23.3219], 12);
+    
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+
+    // Add sensor markers
+    {% for sensor in sensors %}
+    L.marker([{{ sensor.latitude }}, {{ sensor.longitude }}])
+        .addTo(map)
+        .bindPopup('<b>{{ sensor.name }}</b><br>{{ sensor.get_sensor_type_display }}');
+    {% endfor %}
+
+    // Add incident markers
+    {% for incident in incidents_for_map %}
+    L.circleMarker([{{ incident.latitude }}, {{ incident.longitude }}], {
+        radius: 8,
+        fillColor: '#e31e24',
+        color: '#fff',
+        weight: 2,
+        opacity: 1,
+        fillOpacity: 0.8
+    }).addTo(map).bindPopup('<b>{{ incident.title }}</b><br>{{ incident.district }}');
+    {% endfor %}
+</script>
+{% endblock %}
