@@ -18,4 +18,5 @@ urlpatterns = [
     path('consumption/', views.consumption_data, name='consumption'),
     path('map-data/', views.map_data, name='map_data'),
     path('notifications/mark-all-read/', views.mark_all_notifications_read, name='mark_all_read'),
+    path('', include('sensors.urls')),
 ]
