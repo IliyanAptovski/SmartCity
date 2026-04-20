@@ -6,8 +6,9 @@ from datetime import timedelta, datetime
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 
-from .models import Sensor, SensorReading, Anomaly, WaterConsumption, Incident
+from .models import SensorReading, Anomaly, WaterConsumption, Incident
 from reports.models import Report
+from sensors.models import Location, Sensor, Measurement
 
 
 def index(request):
@@ -22,9 +23,9 @@ def index(request):
     context = {
         # Sensor statistics
         'total_sensors': Sensor.objects.count(),
-        'active_sensors': Sensor.objects.filter(status='active').count(),
-        'sensors_in_maintenance': Sensor.objects.filter(status='maintenance').count(),
-        'sensors_with_errors': Sensor.objects.filter(status='error').count(),
+        'active_sensors': Sensor.objects.filter(active=True).count(),
+        # 'sensors_in_maintenance': Sensor.objects.filter(status='maintenance').count(),
+        # 'sensors_with_errors': Sensor.objects.filter(status='error').count(),
         
         # Anomaly statistics
         'total_anomalies': Anomaly.objects.count(),
@@ -57,7 +58,7 @@ def index(request):
         'total_reports': Report.objects.filter(status__in=['pending', 'investigating']).count(),
         
         # Sensors for map
-        'sensors': Sensor.objects.filter(status='active'),
+        'sensors': Sensor.objects.filter(active=True),
         
         # Incidents for map
         'incidents_for_map': Incident.objects.filter(
