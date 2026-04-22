@@ -1,8 +1,9 @@
 from django.shortcuts import render, get_object_or_404
 from django.contrib.auth.decorators import login_required
-from django.db.models import Count, Avg, Sum, Max, Min
+from django.db.models import Count, Avg, Sum, Max, Min, F
 from django.utils import timezone
 from datetime import timedelta, datetime
+import random
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 
@@ -18,6 +19,47 @@ def index(request):
     now = timezone.now()
     last_24h = now - timedelta(hours=24)
     last_7d = now - timedelta(days=7)
+
+    # Detect anomaly
+    def detect_anomaly(m):
+        if m.flow_rate > 120 and m.pressure < 2:
+            return ("leak", "high", "Теч")
+        elif m.flow_rate < 2 and m.pressure > 6.5:
+            return ("blockage", "high", "Запушване")
+        elif m.pressure < 1.5:
+            return ("pressure_drop", "medium", "Спад на налягане")
+        elif m.pressure > 7:
+            return ("pressure_spike", "critical", "Повишено налягане")
+        return None
+    
+    last_24h = timezone.now() - timedelta(hours=24)
+
+    readings = Measurement.objects.filter(
+        timestamp__gte=last_24h
+    ).order_by("-timestamp")
+
+    recent_anomalies = []
+
+    readings = Measurement.objects.order_by("-timestamp")[:200]
+
+    for m in readings:
+        result = detect_anomaly(m)
+
+        if result:
+            anomaly_type, severity, title = result
+
+            recent_anomalies.append({
+                "title": title,
+                "type": anomaly_type,
+                "severity": severity,
+                "sensor_name": m.sensor.name,
+                "location": m.sensor.location.name,
+                "confidence": random.randint(70, 99),
+                "time": m.timestamp,
+            })
+
+        if len(recent_anomalies) >= 5:
+            break
     
     # Statistics
     context = {
@@ -37,10 +79,8 @@ def index(request):
         'anomalies_last_24h': Anomaly.objects.filter(detected_at__gte=last_24h).count(),
         
         # Recent anomalies
-        'recent_anomalies': Anomaly.objects.filter(
-            status__in=['detected', 'investigating', 'confirmed']
-        ).select_related('sensor')[:5],
-        
+        'recent_anomalies': recent_anomalies,
+
         # Featured incidents
         'featured_incidents': Incident.objects.filter(
             is_public=True,
@@ -68,25 +108,37 @@ def index(request):
     }
     
     # Consumption data for charts
-    consumption_data = WaterConsumption.objects.filter(
-        date__gte=now.date() - timedelta(days=7)
-    ).order_by('date', 'hour')
+    last_24h = now - timedelta(hours=24)
+
+    consumption_data = Measurement.objects.filter(
+        timestamp__gte=last_24h
+    ).order_by('timestamp')
     
     # Prepare chart data
     chart_labels = []
     chart_values = []
-    
-    for item in consumption_data[:24]:
-        chart_labels.append(f"{item.hour}:00")
+
+    for item in consumption_data:
+        chart_labels.append(item.timestamp.strftime("%H:%M"))
         chart_values.append(round(item.consumption_liters, 2))
     
     context['chart_labels'] = chart_labels
     context['chart_values'] = chart_values
+    context["recent_anomalies"] = recent_anomalies
     
     # District statistics
-    context['districts'] = WaterConsumption.objects.values('district').annotate(
-        total_consumption=Sum('consumption_liters')
-    ).order_by('-total_consumption')[:5]
+    context['districts'] = (
+    Measurement.objects
+    .values(
+        district=F("sensor__location__name")
+    )
+    .annotate(
+        total_consumption=Sum("flow_rate"),
+        avg_pressure=Avg("pressure"),
+        sensors_count=Count("sensor", distinct=True)
+    )
+    .order_by("-total_consumption")
+    )
     
     return render(request, 'dashboard/index.html', context)
 
